@@ -13,9 +13,8 @@ screen = pygame.display.set_mode((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
 
 player = None
-all_sprites = pygame.sprite.Group()
-tiles_group = pygame.sprite.Group()
-player_group = pygame.sprite.Group()
+sheep_sprites = pygame.sprite.Group()
+bomb_sprites = pygame.sprite.Group()
 
 
 def load_image(name, color_key=None):
@@ -27,6 +26,7 @@ def load_image(name, color_key=None):
     else:
         image = image.convert_alpha()
     return image
+
 
 def terminate():
     pygame.quit()
@@ -61,71 +61,35 @@ def start_screen():
         clock.tick(FPS)
 
 
-tile_images = {'wall': load_image('box.png'), 'empty': load_image('grass.png')}
-player_image = load_image('mario.png')
-
-tile_width = tile_height = 50
-
-
-class Tile(pygame.sprite.Sprite):
-    def __init__(self, tile_type, pos_x, pos_y):
-        super().__init__(tiles_group, all_sprites)
-        self.image = tile_images[tile_type]
-        self.rect = self.image.get_rect().move(tile_width * pos_x, tile_height * pos_y)
-
-
-class Player(pygame.sprite.Sprite):
-    def __init__(self, pos_x, pos_y):
-        super().__init__(player_group, all_sprites)
-        self.image = player_image
-        self.rect = self.image.get_rect().move(tile_width * pos_x + 15, tile_height * pos_y + 5)
-
-
-class Camera:
-    def __init__(self, field_size):
-        self.dx = 0
-        self.dy = 0
-        self.field_size = field_size
-
-    def apply(self, obj):
-        obj.rect.x += self.dx
-        if obj.rect.x < -obj.rect.width:
-            obj.rect.x += (self.field_size[0] + 1) * obj.rect.width
-        if obj.rect.x >= (self.field_size[0]) * obj.rect.width:
-            obj.rect.x += -obj.rect.width * (1 + self.field_size[0])
-        obj.rect.y += self.dy
-        if obj.rect.y < -obj.rect.height:
-            obj.rect.y += (self.field_size[1] + 1) * obj.rect.height
-        if obj.rect.y >= (self.field_size[1]) * obj.rect.height:
-            obj.rect.y += -obj.rect.height * (1 + self.field_size[1])
-
-    def update(self, target):
-        self.dx = -(target.rect.x + target.rect.w // 2 - WIDTH // 2)
-        self.dy = -(target.rect.y + target.rect.h // 2 - HEIGHT // 2)
-
-
+# class Bomb(pygame.sprite.Sprite):
+#     #image = load_image("bomb.png")
+#
+#     def __init__(self, group):
+#         super().__init__(group)
+#         self.image = Bomb.image
+#         self.rect = self.image.get_rect()
+#
+#     def coord(self):
+#         return self.rect.x, self.rect.y
+bg = pygame.transform.scale(load_image('decoration.jpg'), (WIDTH, HEIGHT))
+camera = load_image('camera.png')
+x = 400
 start_screen()
-camera = Camera((level_x, level_y))
 running = True
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-        elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_LEFT:
-                player.rect.x -= STEP
-            if event.key == pygame.K_RIGHT:
-                player.rect.x += STEP
-            if event.key == pygame.K_UP:
-                player.rect.y -= STEP
-            if event.key == pygame.K_DOWN:
-                player.rect.y += STEP
-    camera.update(player)
-    for sprite in all_sprites:
-        camera.apply(sprite)
-    screen.fill(pygame.Color(0, 0, 0))
-    tiles_group.draw(screen)
-    player_group.draw(screen)
+        if event.type == pygame.MOUSEMOTION:
+            x, y = event.pos
+
+    screen.blit(bg, (0, 0))
+    if x > 500:
+        screen.blit(camera, (0, -100))
+    elif x < 300:
+        screen.blit(camera, (-200, -100))
+    else:
+        screen.blit(camera, (-500 + int(x), -100))
     pygame.display.flip()
     clock.tick(FPS)
 terminate()
