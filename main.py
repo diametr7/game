@@ -61,8 +61,31 @@ def start_screen():
         clock.tick(FPS)
 
 
+class Sheep(pygame.sprite.Sprite):
+    # image = pygame.transform.scale(load_image("1.bmp", color_key=-1), (200, 150))
+
+    def __init__(self, name, shift):
+        super().__init__(sheep_sprites)
+        self.image = pygame.transform.scale(load_image(name, color_key=-1), (200, 150))
+        self.rect = self.image.get_rect()
+        if shift == 1:
+            self.rect.x = WIDTH
+        else:
+            self.rect.x = WIDTH + 3 * WIDTH // 4
+        self.rect.y = 50
+
+    def update(self, *args):
+        if self.rect.x <= -WIDTH // 2:
+            self.rect.x = WIDTH
+        else:
+            self.rect.x -= 1
+
+    def coord(self):
+        return self.rect.x, self.rect.y
+
+
 # class Bomb(pygame.sprite.Sprite):
-#     #image = load_image("bomb.png")
+#     image = load_image("bomb.png")
 #
 #     def __init__(self, group):
 #         super().__init__(group)
@@ -72,8 +95,11 @@ def start_screen():
 #     def coord(self):
 #         return self.rect.x, self.rect.y
 bg = pygame.transform.scale(load_image('decoration.jpg'), (WIDTH, HEIGHT))
-camera = load_image('camera.png')
+# camera = load_image('camera.png')
 x = 400
+sh1 = Sheep("1.bmp", 1)
+sh2 = Sheep("2.bmp", 0)
+sheep_sprites.draw(screen)
 start_screen()
 running = True
 while running:
@@ -82,14 +108,16 @@ while running:
             running = False
         if event.type == pygame.MOUSEMOTION:
             x, y = event.pos
-
+    sh1.update()
+    sh2.update()
     screen.blit(bg, (0, 0))
-    if x > 500:
-        screen.blit(camera, (0, -100))
-    elif x < 300:
-        screen.blit(camera, (-200, -100))
-    else:
-        screen.blit(camera, (-500 + int(x), -100))
+    sheep_sprites.draw(screen)
+    # if x > 500:
+    #     screen.blit(camera, (0, -100))
+    # elif x < 300:
+    #     screen.blit(camera, (-200, -100))
+    # else:
+    #     screen.blit(camera, (-500 + int(x), -100))
     pygame.display.flip()
     clock.tick(FPS)
 terminate()
