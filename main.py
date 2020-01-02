@@ -72,7 +72,7 @@ class Sheep(pygame.sprite.Sprite):
             self.rect.x = WIDTH
         else:
             self.rect.x = WIDTH + 3 * WIDTH // 4
-        self.rect.y = 50
+        self.rect.y = 150
 
     def update(self, *args):
         if self.rect.x <= -WIDTH // 2:
@@ -84,16 +84,34 @@ class Sheep(pygame.sprite.Sprite):
         return self.rect.x, self.rect.y
 
 
-# class Bomb(pygame.sprite.Sprite):
-#     image = load_image("bomb.png")
-#
-#     def __init__(self, group):
-#         super().__init__(group)
-#         self.image = Bomb.image
-#         self.rect = self.image.get_rect()
-#
-#     def coord(self):
-#         return self.rect.x, self.rect.y
+class Bomb(pygame.sprite.Sprite):
+    # image = load_image("bomb.png")
+
+    def __init__(self):
+        super().__init__(bomb_sprites)
+        self.radius = 20
+        self.k = (300 - y) / (400 - x)
+        self.b = 300 - 400 * self.k
+        self.x = 300
+        self.y = 600
+        self.image = pygame.Surface((20, 20), pygame.SRCALPHA, 32)
+        pygame.draw.circle(self.image, pygame.Color("blue"), (10, 10), self.radius)
+        self.rect = pygame.Rect(400, 600, 20, 20)
+
+    def update(self, *args):
+        if self.y == 150:
+            drawing = False
+        self.radius -= 1
+        self.x += self.k / (self.k ** 2 + 1) ** 0.5
+        self.y += 1 / (self.k ** 2 + 1) ** 0.5
+        self.image = pygame.Surface((self.radius, self.radius), pygame.SRCALPHA, 32)
+        pygame.draw.circle(self.image, pygame.Color("blue"), (10, 10, self.radius), 0)
+        self.rect = pygame.Rect(self.x, self.y, 2 * self.radius, 2 * self.radius)
+
+    def coord(self):
+        return self.rect.x, self.rect.y
+
+
 bg = pygame.transform.scale(load_image('decoration.jpg'), (WIDTH, HEIGHT))
 # camera = load_image('camera.png')
 x = 400
@@ -102,12 +120,18 @@ sh2 = Sheep("2.bmp", 0)
 sheep_sprites.draw(screen)
 start_screen()
 running = True
+drawing = False
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
         if event.type == pygame.MOUSEMOTION:
             x, y = event.pos
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            bomb = Bomb()
+            drawing = True
+    if drawing:
+        bomb.update()
     sh1.update()
     sh2.update()
     screen.blit(bg, (0, 0))
