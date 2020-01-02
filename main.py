@@ -73,6 +73,7 @@ class Sheep(pygame.sprite.Sprite):
         else:
             self.rect.x = WIDTH + 3 * WIDTH // 4
         self.rect.y = 150
+        self.mask = pygame.mask.from_surface(self.image)
 
     def update(self, *args):
         if self.rect.x <= -WIDTH // 2:
@@ -80,8 +81,8 @@ class Sheep(pygame.sprite.Sprite):
         else:
             self.rect.x -= 1
 
-    def coord(self):
-        return self.rect.x, self.rect.y
+    def fired(self):
+        pass
 
 
 class Bomb(pygame.sprite.Sprite):
@@ -90,23 +91,38 @@ class Bomb(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__(bomb_sprites)
         self.radius = 20
-        self.k = (300 - y) / (400 - x)
-        self.b = 300 - 400 * self.k
-        self.x = 300
+        self.k = (600 - y) / (400 - x)
+        self.b = 600 - 400 * self.k
+        self.x = 400
         self.y = 600
         self.image = pygame.Surface((20, 20), pygame.SRCALPHA, 32)
-        pygame.draw.circle(self.image, pygame.Color("blue"), (10, 10), self.radius)
+        pygame.draw.circle(self.image, pygame.Color("red"), (10, 10), self.radius)
         self.rect = pygame.Rect(400, 600, 20, 20)
+        self.mask = pygame.mask.from_surface(self.image)
 
     def update(self, *args):
-        if self.y == 150:
+        global drawing, bomb_log
+        pygame.transform.smoothscale(self.image, (50, 50))
+        if self.k >= 0:
+            self.y -= 2 * self.k / (self.k ** 2 + 1) ** 0.5
+            self.x -= 2 / (self.k ** 2 + 1) ** 0.5
+        else:
+            self.y += 2 * self.k / (self.k ** 2 + 1) ** 0.5
+            self.x += 2 / (self.k ** 2 + 1) ** 0.5
+        self.rect.x = int(self.x)
+        self.rect.y = int(self.y)
+        if self.rect.y <= 230:
             drawing = False
-        self.radius -= 1
-        self.x += self.k / (self.k ** 2 + 1) ** 0.5
-        self.y += 1 / (self.k ** 2 + 1) ** 0.5
-        self.image = pygame.Surface((self.radius, self.radius), pygame.SRCALPHA, 32)
-        pygame.draw.circle(self.image, pygame.Color("blue"), (10, 10, self.radius), 0)
-        self.rect = pygame.Rect(self.x, self.y, 2 * self.radius, 2 * self.radius)
+            bomb_log = True
+        if pygame.sprite.collide_mask(self, sh1):
+            drawing = False
+            print(1)
+            bomb_log = True
+            sh1.fired()
+        if pygame.sprite.collide_mask(self, sh2):
+            drawing = False
+            bomb_log = True
+            sh2.fired()
 
     def coord(self):
         return self.rect.x, self.rect.y
@@ -121,6 +137,8 @@ sheep_sprites.draw(screen)
 start_screen()
 running = True
 drawing = False
+bomb_log = True
+bomb_num = 0  # 10
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -128,14 +146,22 @@ while running:
         if event.type == pygame.MOUSEMOTION:
             x, y = event.pos
         if event.type == pygame.MOUSEBUTTONDOWN:
-            bomb = Bomb()
-            drawing = True
-    if drawing:
-        bomb.update()
+            x, y = event.pos
+            if bomb_log:
+                bomb_num += 1
+                bomb_sprites.empty()
+                Bomb()
+                drawing = True
+                bomb_log = False
+
     sh1.update()
     sh2.update()
     screen.blit(bg, (0, 0))
     sheep_sprites.draw(screen)
+    if drawing:
+        for el in bomb_sprites:
+            el.update()
+        bomb_sprites.draw(screen)
     # if x > 500:
     #     screen.blit(camera, (0, -100))
     # elif x < 300:
