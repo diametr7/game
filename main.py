@@ -61,6 +61,34 @@ def start_screen():
         clock.tick(FPS)
 
 
+def middle_screen():
+    intro_text = ["ЗАСТАВКА", "",
+                  "Правила игры",
+                  "Если в правилах несколько строк,",
+                  "приходится выводить их построчно"]
+    fon = pygame.transform.scale(load_image('fon.jpg'), (WIDTH, HEIGHT))
+    screen.blit(fon, (0, 0))
+    font = pygame.font.Font(None, 30)
+    text_coord = 50
+    for line in intro_text:
+        string_rendered = font.render(line, 1, pygame.Color('black'))
+        intro_rect = string_rendered.get_rect()
+        text_coord += 10
+        intro_rect.top = text_coord
+        intro_rect.x = 10
+        text_coord += intro_rect.height
+        screen.blit(string_rendered, intro_rect)
+
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminate()
+            elif event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
+                return
+        pygame.display.flip()
+        clock.tick(FPS)
+
+
 class Sheep(pygame.sprite.Sprite):
     # image = pygame.transform.scale(load_image("1.bmp", color_key=-1), (200, 150))
 
@@ -86,7 +114,7 @@ class Sheep(pygame.sprite.Sprite):
 
 
 class Bomb(pygame.sprite.Sprite):
-    # image = load_image("bomb.png")
+    image = load_image("car.png")
 
     def __init__(self):
         super().__init__(bomb_sprites)
@@ -95,14 +123,17 @@ class Bomb(pygame.sprite.Sprite):
         self.b = 600 - 400 * self.k
         self.x = 400
         self.y = 600
-        self.image = pygame.Surface((20, 20), pygame.SRCALPHA, 32)
-        pygame.draw.circle(self.image, pygame.Color("red"), (10, 10), self.radius)
-        self.rect = pygame.Rect(400, 600, 20, 20)
+        self.image = Bomb.image
+        self.rect = self.image.get_rect()
+        self.rect.x = self.x
+        self.rect.y = self.y
         self.mask = pygame.mask.from_surface(self.image)
 
     def update(self, *args):
         global drawing, bomb_log
-        pygame.transform.smoothscale(self.image, (50, 50))
+        self.radius -= 0.02
+        self.image = pygame.transform.scale(Bomb.image, (int(self.radius), int(self.radius)))
+        self.rect = self.image.get_rect()
         if self.k >= 0:
             self.y -= 2 * self.k / (self.k ** 2 + 1) ** 0.5
             self.x -= 2 / (self.k ** 2 + 1) ** 0.5
@@ -122,6 +153,7 @@ class Bomb(pygame.sprite.Sprite):
         if pygame.sprite.collide_mask(self, sh2):
             drawing = False
             bomb_log = True
+            print(2)
             sh2.fired()
 
     def coord(self):
@@ -162,6 +194,13 @@ while running:
         for el in bomb_sprites:
             el.update()
         bomb_sprites.draw(screen)
+    if bomb_num == 10 and drawing is False:
+        bomb_num = 0
+        bomb_log = True
+        sheep_sprites.empty()
+        sh1 = Sheep("1.bmp", 1)
+        sh2 = Sheep("2.bmp", 0)
+        middle_screen()
     # if x > 500:
     #     screen.blit(camera, (0, -100))
     # elif x < 300:
