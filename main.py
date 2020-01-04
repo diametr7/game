@@ -15,6 +15,7 @@ clock = pygame.time.Clock()
 player = None
 sheep_sprites = pygame.sprite.Group()
 bomb_sprites = pygame.sprite.Group()
+fire_sprites = pygame.sprite.Group()
 
 
 def load_image(name, color_key=None):
@@ -110,7 +111,26 @@ class Sheep(pygame.sprite.Sprite):
             self.rect.x -= 1
 
     def fired(self):
-        pass
+        fire = Fire(self.rect.x, self.rect.y)
+        for _ in range(9):
+            fire.update()
+            fire_sprites.draw(screen)
+            pygame.display.flip()
+            clock.tick(10)
+
+
+class Fire(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        super().__init__(fire_sprites)
+        self.i = 0
+        self.image = load_image(f"regularExplosion0{self.i}.png")
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
+
+    def update(self):
+        self.i = (self.i + 1) % 9
+        self.image = load_image(f"regularExplosion0{self.i}.png")
 
 
 class Bomb(pygame.sprite.Sprite):
