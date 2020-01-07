@@ -11,18 +11,41 @@ STEP = 10
 
 sheep_killed = 0
 bomb_pysked = 0
+sheep_killed_last = 0
+bomb_pysked_last = 0
 
 level = 1
+level_next = 10
 level_step = 10
-level_v = 1
 level_disappear = 0
+parts = (WIDTH + 200) // (2 * level_disappear + 1)
+N = 2 * level_disappear + 1
+V = 1
 
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
 
+unsheep_sprites = pygame.sprite.Group()
 sheep_sprites = pygame.sprite.Group()
 bomb_sprites = pygame.sprite.Group()
 fire_sprites = pygame.sprite.Group()
+
+
+def change_level():
+    global level, level_next, level_disappear, level_step, parts, N, V
+    if sheep_killed >= level_next:
+        level += 1
+        level_step = 10 * level
+        level_next += level_step
+        if level % 3 == 0:
+            V = 1
+            level_disappear += 1
+        elif level % 3 == 1:
+            V = 2
+        else:
+            V = 3
+        parts = (WIDTH + 200) // (2 * level_disappear + 1)
+        N = 2 * level_disappear + 1
 
 
 def load_image(name, color_key=None):
@@ -97,43 +120,61 @@ def middle_screen():
         clock.tick(FPS)
 
 
+class UnSheep(pygame.sprite.Sprite):
+    def __init__(self, name, x, n):
+        super().__init__(unsheep_sprites)
+        self.image = pygame.transform.scale(load_image(name, color_key=-1), (200, 150))
+        self.n = n
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.v = V
+
+    def update(self, *args):
+        if self.rect.x <= -200:
+            self.kill()
+        self.rect.x -= self.v
+        if self.rect.x <= 300 and len(unsheep_sprites) + len(sheep_sprites) < 2:
+            Sheep('1.bmp', WIDTH, 1)
+
+
 class Sheep(pygame.sprite.Sprite):
     # image = pygame.transform.scale(load_image("1.bmp", color_key=-1), (200, 150))
 
-    def __init__(self, name, shift):
+    def __init__(self, name, x, n):
         super().__init__(sheep_sprites)
         self.image = pygame.transform.scale(load_image(name, color_key=-1), (200, 150))
-        self.go = shift
+        self.go = 1
+        self.n = n
         self.rect = self.image.get_rect()
-        if shift == 1:
-            self.rect.x = WIDTH
-        else:
-            self.rect.x = -200
-        self.rect.y = 150
-        self.v = 1
+        self.rect.x = x
+        self.rect.y = 130
+        self.v = V
         self.mask = pygame.mask.from_surface(self.image)
 
     def revers(self):
-        self.image = pygame.transform.flip(self.image, True, False)
+        self.image = pygame.transform.flip(self.image, False, True)
         self.go = (self.go + 1) % 2
+        if self.go == 1:
+            self.rect.y = 130
+        else:
+            self.rect.y = 180
 
     def update(self, *args):
-        if self.go == 1:
-            if self.rect.x <= -200:
-                self.kill()
-            else:
-                self.rect.x -= self.v
+        if self.rect.x <= -200:
+            self.kill()
         else:
-            if self.rect.x >= WIDTH:
-                self.kill()
-            else:
-                self.rect.x += self.v
-        if self.rect.x == 300:
-            Sheep('1.bmp', self.go)
+            self.rect.x -= self.v
+        if self.rect.x <= WIDTH + 200 - self.n * parts:
+            self.n += 1
+            self.revers()
+        if self.rect.x <= 300 and len(unsheep_sprites) + len(sheep_sprites) < 2:
+            Sheep('1.bmp', WIDTH, 1)
 
     def fired(self):
-        global sheep_killed
+        global sheep_killed, sheep_killed_last
         sheep_killed += 1
+        sheep_killed_last += 1
+        UnSheep('1.bmp', self.rect.x, self.n)
         fire = Fire(self.rect.x + 40, self.rect.y)
         for _ in range(9):
             fire.update()
@@ -141,8 +182,7 @@ class Sheep(pygame.sprite.Sprite):
             pygame.display.flip()
             clock.tick(10)
         fire.kill()
-        for el in sheep_sprites:
-            el.revers()
+        self.kill()
 
 
 class Fire(pygame.sprite.Sprite):
@@ -163,10 +203,11 @@ class Bomb(pygame.sprite.Sprite):
     image = load_image("car.png")
 
     def __init__(self):
-        global bomb_pysked
+        global bomb_pysked, bomb_pysked_last
         super().__init__(bomb_sprites)
         self.radius = 20
         bomb_pysked += 1
+        bomb_pysked_last += 1
         self.k = (600 - y) / (400 - x)
         self.b = 600 - 400 * self.k
         self.x = 400
@@ -205,7 +246,7 @@ class Bomb(pygame.sprite.Sprite):
 
 bg = pygame.transform.scale(load_image('decoration.jpg'), (WIDTH, HEIGHT))
 # camera = load_image('camera.png')
-Sheep("1.bmp", 1)
+Sheep("1.bmp", WIDTH, 1)
 sheep_sprites.draw(screen)
 start_screen()
 running = True
@@ -228,6 +269,7 @@ while running:
                 bomb_log = False
 
     sheep_sprites.update()
+    unsheep_sprites.update()
     screen.blit(bg, (0, 0))
     sheep_sprites.draw(screen)
     if drawing:
@@ -250,32 +292,3 @@ while running:
     pygame.display.flip()
     clock.tick(FPS)
 terminate()
-
-# import pygame
-# import random
-#
-# pygame.init()
-#
-# sizef = width, height = 300, 300
-#
-# screen = pygame.display.set_mode(sizef)
-# screen.fill((0, 0, 0))
-# drawing = False
-# running = True
-# fps = 100
-# clock = pygame.time.Clock()
-# while running:
-#     for event in pygame.event.get():
-#         if event.type == pygame.QUIT:
-#             running = False
-#         if event.type == pygame.MOUSEMOTION:
-#             x, y = event.pos
-#
-#             drawing = True
-#     if drawing:
-#         screen.fill((0, 0, 0))
-#         pygame.draw.ellipse(screen, (0, 0, 255), (-150, -100, 600, 500), 250)
-#
-#     pygame.display.flip()
-#
-# pygame.quit()
