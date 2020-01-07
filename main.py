@@ -9,10 +9,17 @@ WIDTH = 800
 HEIGHT = 600
 STEP = 10
 
+sheep_killed = 0
+bomb_pysked = 0
+
+level = 1
+level_step = 10
+level_v = 1
+level_disappear = 0
+
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
 
-player = None
 sheep_sprites = pygame.sprite.Group()
 bomb_sprites = pygame.sprite.Group()
 fire_sprites = pygame.sprite.Group()
@@ -125,6 +132,8 @@ class Sheep(pygame.sprite.Sprite):
             Sheep('1.bmp', self.go)
 
     def fired(self):
+        global sheep_killed
+        sheep_killed += 1
         fire = Fire(self.rect.x + 40, self.rect.y)
         for _ in range(9):
             fire.update()
@@ -154,8 +163,10 @@ class Bomb(pygame.sprite.Sprite):
     image = load_image("car.png")
 
     def __init__(self):
+        global bomb_pysked
         super().__init__(bomb_sprites)
         self.radius = 20
+        bomb_pysked += 1
         self.k = (600 - y) / (400 - x)
         self.b = 600 - 400 * self.k
         self.x = 400
@@ -194,7 +205,6 @@ class Bomb(pygame.sprite.Sprite):
 
 bg = pygame.transform.scale(load_image('decoration.jpg'), (WIDTH, HEIGHT))
 # camera = load_image('camera.png')
-x = 400
 Sheep("1.bmp", 1)
 sheep_sprites.draw(screen)
 start_screen()
