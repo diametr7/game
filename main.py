@@ -96,27 +96,44 @@ class Sheep(pygame.sprite.Sprite):
     def __init__(self, name, shift):
         super().__init__(sheep_sprites)
         self.image = pygame.transform.scale(load_image(name, color_key=-1), (200, 150))
+        self.go = shift
         self.rect = self.image.get_rect()
         if shift == 1:
             self.rect.x = WIDTH
         else:
-            self.rect.x = WIDTH + 3 * WIDTH // 4
+            self.rect.x = -200
         self.rect.y = 150
+        self.v = 1
         self.mask = pygame.mask.from_surface(self.image)
 
+    def revers(self):
+        self.image = pygame.transform.flip(self.image, True, False)
+        self.go = (self.go + 1) % 2
+
     def update(self, *args):
-        if self.rect.x <= -WIDTH // 2:
-            self.rect.x = WIDTH
+        if self.go == 1:
+            if self.rect.x <= -200:
+                self.kill()
+            else:
+                self.rect.x -= self.v
         else:
-            self.rect.x -= 1
+            if self.rect.x >= WIDTH:
+                self.kill()
+            else:
+                self.rect.x += self.v
+        if self.rect.x == 300:
+            Sheep('1.bmp', self.go)
 
     def fired(self):
-        fire = Fire(self.rect.x, self.rect.y)
+        fire = Fire(self.rect.x + 40, self.rect.y)
         for _ in range(9):
             fire.update()
             fire_sprites.draw(screen)
             pygame.display.flip()
             clock.tick(10)
+        fire.kill()
+        for el in sheep_sprites:
+            el.revers()
 
 
 class Fire(pygame.sprite.Sprite):
@@ -165,16 +182,11 @@ class Bomb(pygame.sprite.Sprite):
         if self.rect.y <= 230:
             drawing = False
             bomb_log = True
-        if pygame.sprite.collide_mask(self, sh1):
-            drawing = False
-            print(1)
-            bomb_log = True
-            sh1.fired()
-        if pygame.sprite.collide_mask(self, sh2):
-            drawing = False
-            bomb_log = True
-            print(2)
-            sh2.fired()
+        for el in sheep_sprites:
+            if pygame.sprite.collide_mask(self, el):
+                drawing = False
+                el.fired()
+                bomb_log = True
 
     def coord(self):
         return self.rect.x, self.rect.y
@@ -183,8 +195,7 @@ class Bomb(pygame.sprite.Sprite):
 bg = pygame.transform.scale(load_image('decoration.jpg'), (WIDTH, HEIGHT))
 # camera = load_image('camera.png')
 x = 400
-sh1 = Sheep("1.bmp", 1)
-sh2 = Sheep("2.bmp", 0)
+Sheep("1.bmp", 1)
 sheep_sprites.draw(screen)
 start_screen()
 running = True
@@ -206,8 +217,7 @@ while running:
                 drawing = True
                 bomb_log = False
 
-    sh1.update()
-    sh2.update()
+    sheep_sprites.update()
     screen.blit(bg, (0, 0))
     sheep_sprites.draw(screen)
     if drawing:
