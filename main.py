@@ -129,16 +129,12 @@ def middle_screen():
 
 
 def hall_of_fame():
-    intro_text = ["ЗАСТАВКА", "",
-                  "Правила игры",
-                  "Если в правилах несколько строк,",
-                  "приходится выводить их построчно"]
-    fon = pygame.transform.scale(load_image('fon.jpg'), (WIDTH, HEIGHT))
-    screen.blit(fon, (0, 0))
+    intro_text = ["Введите свое имя"]
+    screen.fill((30, 30, 30))
     font = pygame.font.Font(None, 30)
     text_coord = 50
     for line in intro_text:
-        string_rendered = font.render(line, 1, pygame.Color('black'))
+        string_rendered = font.render(line, 1, pygame.Color('white'))
         intro_rect = string_rendered.get_rect()
         text_coord += 10
         intro_rect.top = text_coord
@@ -147,13 +143,82 @@ def hall_of_fame():
         screen.blit(string_rendered, intro_rect)
 
     while True:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                terminate()
-            elif event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
-                return
-        pygame.display.flip()
-        clock.tick(FPS)
+        clock = pygame.time.Clock()
+        box = InputBox(100, 100, 140, 32)
+        done = False
+
+        while not done:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    terminate()
+                if box.stop is False:
+                    box.handle_event(event)
+
+            box.update()
+
+            screen.fill((30, 30, 30))
+            box.draw(screen)
+
+            text_coord = 50
+            for line in intro_text:
+                string_rendered = font.render(line, 1, pygame.Color('white'))
+                intro_rect = string_rendered.get_rect()
+                text_coord += 10
+                intro_rect.top = text_coord
+                intro_rect.x = 10
+                text_coord += intro_rect.height
+                screen.blit(string_rendered, intro_rect)
+
+            pygame.display.flip()
+            clock.tick(30)
+
+
+COLOR_INACTIVE = pygame.Color('lightskyblue3')
+COLOR_ACTIVE = pygame.Color('dodgerblue2')
+FONT = pygame.font.Font(None, 32)
+
+
+class InputBox:
+
+    def __init__(self, x, y, w, h, text=''):
+        self.rect = pygame.Rect(x, y, w, h)
+        self.color = COLOR_INACTIVE
+        self.text = text
+        self.stop = False
+        self.txt_surface = FONT.render(text, True, self.color)
+        self.active = False
+
+    def handle_event(self, event):
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if self.rect.collidepoint(event.pos):
+                self.active = not self.active
+            else:
+                self.active = False
+            self.color = COLOR_ACTIVE if self.active else COLOR_INACTIVE
+        if event.type == pygame.KEYDOWN:
+            if self.active:
+                if event.key == pygame.K_RETURN:
+                    print(self.text)
+                    self.stop = True
+                elif event.key == pygame.K_BACKSPACE:
+                    self.text = self.text[:-1]
+                else:
+                    self.text += event.unicode
+                self.txt_surface = FONT.render(self.text, True, self.color)
+
+    def update(self):
+        width = max(200, self.txt_surface.get_width() + 10)
+        self.rect.w = width
+
+    def draw(self, screen):
+        screen.blit(self.txt_surface, (self.rect.x + 5, self.rect.y + 5))
+        pygame.draw.rect(screen, self.color, self.rect, 2)
+
+    def stop(self):
+        return self.stop
+
+    def text(self):
+        return self.text
 
 
 class UnSheep(pygame.sprite.Sprite):
@@ -213,7 +278,7 @@ class Sheep(pygame.sprite.Sprite):
         global sheep_killed, sheep_killed_last
         sheep_killed += 1
         sheep_killed_last += 1
-        print(len(unsheep_sprites) + len(sheep_sprites), unsheep_sprites, sheep_sprites)
+        # print(len(unsheep_sprites) + len(sheep_sprites), unsheep_sprites, sheep_sprites)
         if len(unsheep_sprites) + len(sheep_sprites) >= 2:
             UnSheep('1.bmp', self.rect.x, self.n)
         else:
