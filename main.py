@@ -1,5 +1,6 @@
 import sys
 import pygame
+import sqlite3
 
 pygame.init()
 pygame.key.set_repeat(200, 70)
@@ -153,7 +154,10 @@ def hall_of_fame():
                     terminate()
                 if box.stop is False:
                     box.handle_event(event)
-
+                else:
+                    name = box.texts()
+                    done = True
+                    break
             box.update()
 
             screen.fill((30, 30, 30))
@@ -171,6 +175,14 @@ def hall_of_fame():
 
             pygame.display.flip()
             clock.tick(30)
+        print('add')
+        con = sqlite3.connect('rating.sqlite3')
+        cur = con.cursor()
+        cur.execute(f"""INSERT INTO rating('name', 'score') VALUES('{name}', {sheep_killed})""")
+        con.commit()
+
+        con.close()
+        print('yes')
 
 
 COLOR_INACTIVE = pygame.Color('lightskyblue3')
@@ -198,7 +210,7 @@ class InputBox:
         if event.type == pygame.KEYDOWN:
             if self.active:
                 if event.key == pygame.K_RETURN:
-                    print(self.text)
+                    # print(self.text)
                     self.stop = True
                 elif event.key == pygame.K_BACKSPACE:
                     self.text = self.text[:-1]
@@ -217,7 +229,7 @@ class InputBox:
     def stop(self):
         return self.stop
 
-    def text(self):
+    def texts(self):
         return self.text
 
 
@@ -350,6 +362,7 @@ class Bomb(pygame.sprite.Sprite):
         return self.rect.x, self.rect.y
 
 
+hall_of_fame()
 bg = pygame.transform.scale(load_image('decoration.jpg'), (WIDTH, HEIGHT))
 # camera = load_image('camera.png')
 Sheep("1.bmp", WIDTH, 1)
