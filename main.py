@@ -2,6 +2,9 @@ import sys
 import pygame
 import sqlite3
 
+# уход машинки за экран
+# неотображение места
+# кнопки, музыкааааааа
 pygame.init()
 pygame.key.set_repeat(200, 70)
 
@@ -129,25 +132,56 @@ def middle_screen():
         clock.tick(FPS)
 
 
+def rating(spisok):
+    itog = []
+    i = 1
+    for el in spisok[len(spisok) - 1:0:-1]:
+        itog.append([str(i), el[0], str(el[1])])
+        i += 1
+    # print(itog)
+    return itog
+
+
+font = pygame.font.Font(None, 30)
+
+
+def pr_line(line, x, y, color):
+    string_rendered = font.render(line, 1, pygame.Color(color))
+    intro_rect = string_rendered.get_rect()
+    intro_rect.x = x
+    intro_rect.y = y
+    screen.blit(string_rendered, intro_rect)
+
+
 def hall_of_fame():
-    intro_text = ["Введите свое имя"]
+    global sheep_killed
+    con = sqlite3.connect('rating.sqlite3')
+    cur = con.cursor()
+    res = rating(cur.execute(f"""SELECT name, score FROM rating ORDER BY score""").fetchall())[1:5]
+    intro_text = ["Введите свое имя:", f"Заработано баллов: {sheep_killed}", "Таблица лидеров"]
     screen.fill((30, 30, 30))
-    font = pygame.font.Font(None, 30)
-    text_coord = 50
-    for line in intro_text:
-        string_rendered = font.render(line, 1, pygame.Color('white'))
-        intro_rect = string_rendered.get_rect()
-        text_coord += 10
-        intro_rect.top = text_coord
-        intro_rect.x = 10
-        text_coord += intro_rect.height
-        screen.blit(string_rendered, intro_rect)
-
+    pr_line(intro_text[0], 10, 20, 'white')
+    pr_line(intro_text[1], 10, 140, 'white')
+    pr_line(intro_text[2], 400, 20, 'white')
+    X, Y = 400, 70
+    i = 1
+    for el in res:
+        if i == 1:
+            s = 'gold'
+        elif i == 2:
+            s = 'black'
+        elif i == 3:
+            s = 'red'
+        else:
+            s = 'white'
+        pr_line('   '.join(el), X, Y, i)
+        Y += 20
+        i += 1
+    app = True
+    clock = pygame.time.Clock()
+    box = InputBox(10, 70, 140, 32)
+    done = False
     while True:
-        clock = pygame.time.Clock()
-        box = InputBox(100, 100, 140, 32)
-        done = False
-
         while not done:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -163,26 +197,58 @@ def hall_of_fame():
             screen.fill((30, 30, 30))
             box.draw(screen)
 
-            text_coord = 50
-            for line in intro_text:
-                string_rendered = font.render(line, 1, pygame.Color('white'))
-                intro_rect = string_rendered.get_rect()
-                text_coord += 10
-                intro_rect.top = text_coord
-                intro_rect.x = 10
-                text_coord += intro_rect.height
-                screen.blit(string_rendered, intro_rect)
-
+            pr_line(intro_text[0], 10, 20, 'white')
+            pr_line(intro_text[1], 10, 140, 'white')
+            pr_line(intro_text[2], 400, 20, 'white')
+            X, Y = 400, 70
+            i = 1
+            for el in res:
+                if i == 1:
+                    s = 'gold'
+                elif i == 2:
+                    s = 'grey'
+                elif i == 3:
+                    s = 'orange'
+                else:
+                    s = 'white'
+                pr_line('   '.join(el), X, Y, s)
+                Y += 20
+                i += 1
             pygame.display.flip()
             clock.tick(30)
-        print('add')
-        con = sqlite3.connect('rating.sqlite3')
-        cur = con.cursor()
-        cur.execute(f"""INSERT INTO rating('name', 'score') VALUES('{name}', {sheep_killed})""")
-        con.commit()
-
-        con.close()
-        print('yes')
+        if app:
+            cur.execute(f"""INSERT INTO rating('name', 'score') VALUES('{name}', {sheep_killed})""")
+            res1 = rating(cur.execute(f"""SELECT name, score FROM rating ORDER BY score""").fetchall())
+            con.commit()
+            con.close()
+            j = 0
+            for el in res1:
+                if el[1:] == [name, str(sheep_killed)]:
+                    j = el[0]
+                    break
+            app = False
+            screen.fill((30, 30, 30))
+            box.draw(screen)
+            pr_line(f'Вы на {j} месте', 10, 200, 'white')
+            print(j)
+            pr_line(intro_text[0], 10, 20, 'white')
+            pr_line(intro_text[1], 10, 140, 'white')
+            pr_line(intro_text[2], 400, 20, 'white')
+            X, Y = 400, 70
+            i = 1
+            for el in res:
+                if i == 1:
+                    s = 'gold'
+                elif i == 2:
+                    s = 'grey'
+                elif i == 3:
+                    s = 'orange'
+                else:
+                    s = 'white'
+                pr_line('   '.join(el), X, Y, s)
+                Y += 20
+                i += 1
+            pygame.display.flip()
 
 
 COLOR_INACTIVE = pygame.Color('lightskyblue3')
@@ -290,33 +356,26 @@ class Sheep(pygame.sprite.Sprite):
         global sheep_killed, sheep_killed_last
         sheep_killed += 1
         sheep_killed_last += 1
-        # print(len(unsheep_sprites) + len(sheep_sprites), unsheep_sprites, sheep_sprites)
         if len(unsheep_sprites) + len(sheep_sprites) >= 2:
             UnSheep('1.bmp', self.rect.x, self.n)
         else:
             Sheep('1.bmp', WIDTH, 1)
-        fire = Fire(self.rect.x + 40, self.rect.y)
-        for _ in range(9):
-            fire.update()
+        for i in range(9):
+            fire = Fire(self.rect.x + 40, self.rect.y, i)
             fire_sprites.draw(screen)
             pygame.display.flip()
             clock.tick(10)
-        fire.kill()
+            fire_sprites.empty()
         self.kill()
 
 
 class Fire(pygame.sprite.Sprite):
-    def __init__(self, x, y):
+    def __init__(self, x, y, i):
         super().__init__(fire_sprites)
-        self.i = 0
-        self.image = load_image(f"regularExplosion0{self.i}.png")
+        self.image = load_image(f"regularExplosion0{i}.png")
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
-
-    def update(self):
-        self.i = (self.i + 1) % 9
-        self.image = load_image(f"regularExplosion0{self.i}.png")
 
 
 class Bomb(pygame.sprite.Sprite):
@@ -355,14 +414,14 @@ class Bomb(pygame.sprite.Sprite):
             self.x += 2 / (self.k ** 2 + 1) ** 0.5
         self.rect.x = int(self.x)
         self.rect.y = int(self.y)
-        if self.rect.y <= 230:
+        if self.rect.y <= 230 or self.rect.x <= -10 or self.rect.x >= WIDTH:
             drawing = False
 
     def coord(self):
         return self.rect.x, self.rect.y
 
 
-hall_of_fame()
+# hall_of_fame()
 bg = pygame.transform.scale(load_image('decoration.jpg'), (WIDTH, HEIGHT))
 # camera = load_image('camera.png')
 Sheep("1.bmp", WIDTH, 1)
