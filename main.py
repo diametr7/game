@@ -37,13 +37,13 @@ def change_level():
         level += 1
         level_step = 10 * level
         level_next += level_step
-        if level % 3 == 0:
+        if level % 3 == 1:
             V = 1
-            level_disappear += 1
-        elif level % 3 == 1:
+        elif level % 3 == 2:
             V = 2
         else:
             V = 3
+            level_disappear += 1
         parts = (WIDTH + 200) // (2 * level_disappear + 1)
         N = 2 * level_disappear + 1
 
@@ -93,10 +93,12 @@ def start_screen():
 
 
 def middle_screen():
-    intro_text = ["ЗАСТАВКА", "",
-                  "Правила игры",
-                  "Если в правилах несколько строк,",
-                  "приходится выводить их построчно"]
+    global sheep_killed, bomb_pysked, sheep_killed_last, bomb_pysked_last, bomb_num, bomb_log, \
+        sheep_sprites, unsheep_sprites, level, level_step, level_next
+    change_level()
+    intro_text = [f"{level} уровень", f"Рейтинг: {level_step - level_next + sheep_killed} из {level_step}",
+                  f"Всего выпущено {bomb_pysked} бомб, {bomb_pysked_last} бомб выпущено в последней игре",
+                  f"Убито {sheep_killed} кораблей, {sheep_killed_last} кораблей убито в последней игре"]
     fon = pygame.transform.scale(load_image('fon.jpg'), (WIDTH, HEIGHT))
     screen.blit(fon, (0, 0))
     font = pygame.font.Font(None, 30)
@@ -115,6 +117,13 @@ def middle_screen():
             if event.type == pygame.QUIT:
                 terminate()
             elif event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
+                sheep_killed_last = 0
+                bomb_pysked_last = 0
+                sheep_sprites.empty()
+                unsheep_sprites.empty()
+                bomb_log = True
+                bomb_num = 0
+                Sheep("1.bmp", WIDTH, 1)
                 return
         pygame.display.flip()
         clock.tick(FPS)
@@ -135,6 +144,7 @@ class UnSheep(pygame.sprite.Sprite):
         self.rect.x -= self.v
         if self.rect.x <= 300 and len(unsheep_sprites) + len(sheep_sprites) < 2:
             Sheep('1.bmp', WIDTH, 1)
+            self.kill()
 
 
 class Sheep(pygame.sprite.Sprite):
@@ -165,8 +175,9 @@ class Sheep(pygame.sprite.Sprite):
         else:
             self.rect.x -= self.v
         if self.rect.x <= WIDTH + 200 - self.n * parts:
-            self.n += 1
-            self.revers()
+            if self.n != N:
+                self.n += 1
+                self.revers()
         if self.rect.x <= 300 and len(unsheep_sprites) + len(sheep_sprites) < 2:
             Sheep('1.bmp', WIDTH, 1)
 
@@ -174,7 +185,11 @@ class Sheep(pygame.sprite.Sprite):
         global sheep_killed, sheep_killed_last
         sheep_killed += 1
         sheep_killed_last += 1
-        UnSheep('1.bmp', self.rect.x, self.n)
+        # print(len(unsheep_sprites) + len(sheep_sprites), unsheep_sprites, sheep_sprites)
+        if len(unsheep_sprites) + len(sheep_sprites) >= 2:
+            UnSheep('1.bmp', self.rect.x, self.n)
+        else:
+            Sheep('1.bmp', WIDTH, 1)
         fire = Fire(self.rect.x + 40, self.rect.y)
         for _ in range(9):
             fire.update()
@@ -277,11 +292,6 @@ while running:
             el.update()
         bomb_sprites.draw(screen)
     if bomb_num == 10 and drawing is False:
-        bomb_num = 0
-        bomb_log = True
-        sheep_sprites.empty()
-        sh1 = Sheep("1.bmp", 1)
-        sh2 = Sheep("2.bmp", 0)
         middle_screen()
     # if x > 500:
     #     screen.blit(camera, (0, -100))
