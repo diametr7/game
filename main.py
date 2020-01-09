@@ -2,8 +2,6 @@ import sys
 import pygame
 import sqlite3
 
-# уход машинки за экран
-# неотображение места
 # кнопки, музыкааааааа
 pygame.init()
 pygame.key.set_repeat(200, 70)
@@ -70,42 +68,52 @@ def terminate():
 
 
 def start_screen():
-    intro_text = ["ЗАСТАВКА", "",
-                  "Правила игры",
-                  "Если в правилах несколько строк,",
-                  "приходится выводить их построчно"]
-    fon = pygame.transform.scale(load_image('fon.jpg'), (WIDTH, HEIGHT))
-    screen.blit(fon, (0, 0))
-    font = pygame.font.Font(None, 30)
-    text_coord = 50
-    for line in intro_text:
-        string_rendered = font.render(line, 1, pygame.Color('black'))
-        intro_rect = string_rendered.get_rect()
-        text_coord += 10
-        intro_rect.top = text_coord
-        intro_rect.x = 10
-        text_coord += intro_rect.height
-        screen.blit(string_rendered, intro_rect)
+    # помощь, начать игру, выйти
+    intro_text = ["Морской Бой", "Главное меню",
+                  "Подбейте как можно больше кораблей.",
+                  "У вас всего 5 торпед.",
+                  "Для перехода на следующий уровень необходимо убить 4 корабля."]
+    screen.fill((30, 30, 50))
+    Button('play.png', 6, 320, 100)
+    Button('info.png', 0, 380, 100)
+    Button('close.png', 4, 440, 100)
+    pygame.draw.rect(screen, (38, 158, 63), (300, 80, 200, 80))
+    button_sprites.draw(screen)
+    pr_line(intro_text[0], 334, 10, 'white')
+    pr_line(intro_text[1], 329, 50, 'white')
+    pr_line(intro_text[2], 20, 480, 'white')
+    pr_line(intro_text[3], 20, 520, 'white')
+    pr_line(intro_text[4], 20, 560, 'white')
 
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 terminate()
-            elif event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
-                return
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                x, y = event.pos
+                if y >= 100 and y <= 140:
+                    if x >= 320 and x <= 360:
+                        return
+                    elif x >= 380 and x <= 420:
+                        info()
+                    elif x >= 440 and x <= 480:
+                        terminate()
         pygame.display.flip()
         clock.tick(FPS)
 
 
+def info():
+    pass
+
+
 def middle_screen():
+    # досрочно закончить игру(в зал славы), играть, помощь
     global sheep_killed, bomb_pysked, bomb_num, saved_bombs, \
         sheep_sprites, unsheep_sprites, level, sheep_killed_last, bomb_pysked_last
     intro_text = [f"{level} уровень",
                   f"Всего выпущено бомб: {bomb_pysked}",
                   f"Убито кораблей: {sheep_killed}", f"Запасных бомб: {saved_bombs}"]
-    fon = pygame.transform.scale(load_image('fon.jpg'), (WIDTH, HEIGHT))
-    screen.blit(fon, (0, 0))
-    font = pygame.font.Font(None, 30)
+    screen.fill((30, 30, 40))
     text_coord = 50
     for line in intro_text:
         string_rendered = font.render(line, 1, pygame.Color('black'))
@@ -145,8 +153,9 @@ def rating(spisok):
 font = pygame.font.Font(None, 30)
 
 
-def pr_line(line, x, y, color):
-    string_rendered = font.render(line, 1, pygame.Color(color))
+def pr_line(line, x, y, color, sh=None, tag=30):
+    font1 = pygame.font.Font(sh, tag)
+    string_rendered = font1.render(line, 1, pygame.Color(color))
     intro_rect = string_rendered.get_rect()
     intro_rect.x = x
     intro_rect.y = y
@@ -154,6 +163,7 @@ def pr_line(line, x, y, color):
 
 
 def hall_of_fame():
+    # выйти (из комнаты...), начать новую игру, помощь
     global sheep_killed
     con = sqlite3.connect('rating.sqlite3')
     cur = con.cursor()
@@ -174,7 +184,7 @@ def hall_of_fame():
             s = 'red'
         else:
             s = 'white'
-        pr_line('   '.join(el), X, Y, i)
+        pr_line('   '.join(el), X, Y, s)
         Y += 20
         i += 1
     app = True
@@ -227,28 +237,55 @@ def hall_of_fame():
                     j = el[0]
                     break
             app = False
-            screen.fill((30, 30, 30))
-            box.draw(screen)
+            # screen.fill((30, 30, 30))
+            # box.draw(screen)
             pr_line(f'Вы на {j} месте', 10, 200, 'white')
-            print(j)
-            pr_line(intro_text[0], 10, 20, 'white')
-            pr_line(intro_text[1], 10, 140, 'white')
-            pr_line(intro_text[2], 400, 20, 'white')
-            X, Y = 400, 70
-            i = 1
-            for el in res:
-                if i == 1:
-                    s = 'gold'
-                elif i == 2:
-                    s = 'grey'
-                elif i == 3:
-                    s = 'orange'
-                else:
-                    s = 'white'
-                pr_line('   '.join(el), X, Y, s)
-                Y += 20
-                i += 1
+            # #print(j)
+            # pr_line(intro_text[0], 10, 20, 'white')
+            # pr_line(intro_text[1], 10, 140, 'white')
+            # pr_line(intro_text[2], 400, 20, 'white')
+            # X, Y = 400, 70
+            # i = 1
+            # for el in res:
+            #     if i == 1:
+            #         s = 'gold'
+            #     elif i == 2:
+            #         s = 'grey'
+            #     elif i == 3:
+            #         s = 'orange'
+            #     else:
+            #         s = 'white'
+            #     pr_line('   '.join(el), X, Y, s)
+            #     Y += 20
+            #     i += 1
             pygame.display.flip()
+
+
+def pause():  # экран паузы...(с продолжением и помощью, и досрочным заканчиванием в зал славы)
+    global sheep_killed, bomb_pysked, bomb_num, saved_bombs, \
+        sheep_sprites, unsheep_sprites, level, sheep_killed_last, bomb_pysked_last
+    intro_text = ["Пауза", f"{level} уровень",
+                  f"Всего выпущено бомб: {bomb_pysked}",
+                  f"Убито кораблей: {sheep_killed}", f"Запасных бомб: {saved_bombs}"]
+    screen.fill((30, 30, 30))
+    text_coord = 50
+    for line in intro_text:
+        string_rendered = font.render(line, 1, pygame.Color('black'))
+        intro_rect = string_rendered.get_rect()
+        text_coord += 10
+        intro_rect.top = text_coord
+        intro_rect.x = 10
+        text_coord += intro_rect.height
+        screen.blit(string_rendered, intro_rect)
+
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminate()
+            elif event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
+                return
+        pygame.display.flip()
+        clock.tick(FPS)
 
 
 COLOR_INACTIVE = pygame.Color('lightskyblue3')
@@ -297,6 +334,27 @@ class InputBox:
 
     def texts(self):
         return self.text
+
+
+button_sprites = pygame.sprite.Group()
+help_but = pygame.sprite.Group()  # info
+pause_but = pygame.sprite.Group()  # pause
+continue_but = pygame.sprite.Group()  # play
+end_but = pygame.sprite.Group()  # stop
+close_but = pygame.sprite.Group()  # close
+new_but = pygame.sprite.Group()  # new
+play_but = pygame.sprite.Group()  # play
+but = [help_but, pause_but, continue_but, end_but, close_but, new_but, play_but]
+
+
+class Button(pygame.sprite.Sprite):
+    def __init__(self, name, gr, x, y):
+        super().__init__(button_sprites)
+        self.add(but[gr])
+        self.image = load_image(name)
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
 
 
 class UnSheep(pygame.sprite.Sprite):
@@ -429,7 +487,8 @@ sheep_sprites.draw(screen)
 start_screen()
 running = True
 drawing = False
-bomb_num = 0  # 10
+bomb_num = 0  # 5
+# пауза
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -454,12 +513,15 @@ while running:
         bomb_sprites.draw(screen)
     if bomb_pysked_last == 5 + saved_bombs and drawing is False:
         saved_bombs = level * 5 - bomb_pysked
+        if saved_bombs > 5:
+            saved_bombs = 5
         if change_level():
             middle_screen()
         else:
             hall_of_fame()
     elif sheep_killed_last == 4:
-        saved_bombs += 1
+        if saved_bombs < 5:
+            saved_bombs += 1
         change_level()
         middle_screen()
     # if x > 500:
