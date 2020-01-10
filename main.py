@@ -69,6 +69,7 @@ def terminate():
 
 def start_screen():
     # помощь, начать игру, выйти
+    # картинка
     intro_text = ["Морской Бой", "Главное меню",
                   "Подбейте как можно больше кораблей.",
                   "У вас всего 5 торпед.",
@@ -93,17 +94,49 @@ def start_screen():
                 x, y = event.pos
                 if y >= 100 and y <= 140:
                     if x >= 320 and x <= 360:
+                        clock.tick(10)
+                        button_sprites.empty()
                         return
                     elif x >= 380 and x <= 420:
+                        clock.tick(10)
                         info()
+                        screen.fill((30, 30, 50))
+                        pygame.draw.rect(screen, (38, 158, 63), (300, 80, 200, 80))
+                        button_sprites.draw(screen)
+                        pr_line(intro_text[0], 334, 10, 'white')
+                        pr_line(intro_text[1], 329, 50, 'white')
+                        pr_line(intro_text[2], 20, 480, 'white')
+                        pr_line(intro_text[3], 20, 520, 'white')
+                        pr_line(intro_text[4], 20, 560, 'white')
                     elif x >= 440 and x <= 480:
+                        clock.tick(10)
                         terminate()
         pygame.display.flip()
         clock.tick(FPS)
 
 
 def info():
-    pass
+    # rules
+    intro_text = ["Морской Бой", "Главное меню",
+                  "Подбейте как можно больше кораблей.",
+                  "У вас всего 5 торпед.",
+                  "Для перехода на следующий уровень необходимо убить 4 корабля."]
+    screen.fill((30, 30, 50))
+    but = Button('back.png', 7, 20, 20)
+    back_but.draw(screen)
+
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminate()
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                x, y = event.pos
+                if y >= 20 and y <= 60 and x >= 20 and x <= 60:
+                    clock.tick(10)
+                    but.kill()
+                    return
+        pygame.display.flip()
+        clock.tick(FPS)
 
 
 def middle_screen():
@@ -114,9 +147,14 @@ def middle_screen():
                   f"Всего выпущено бомб: {bomb_pysked}",
                   f"Убито кораблей: {sheep_killed}", f"Запасных бомб: {saved_bombs}"]
     screen.fill((30, 30, 40))
+    Button('play.png', 6, 320, 100)
+    Button('info.png', 0, 380, 100)
+    Button('stop.png', 4, 440, 100)
+    pygame.draw.rect(screen, (38, 158, 63), (300, 80, 200, 80))
+    button_sprites.draw(screen)
     text_coord = 50
     for line in intro_text:
-        string_rendered = font.render(line, 1, pygame.Color('black'))
+        string_rendered = font.render(line, 1, pygame.Color('white'))
         intro_rect = string_rendered.get_rect()
         text_coord += 10
         intro_rect.top = text_coord
@@ -128,14 +166,38 @@ def middle_screen():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 terminate()
-            elif event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
-                sheep_killed_last = 0
-                bomb_pysked_last = 0
-                sheep_sprites.empty()
-                unsheep_sprites.empty()
-                bomb_num = 0
-                Sheep("1.bmp", WIDTH, 1)
-                return
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                x, y = event.pos
+                if y >= 100 and y <= 140:
+                    if x >= 320 and x <= 360:
+                        clock.tick(10)
+                        sheep_killed_last = 0
+                        bomb_pysked_last = 0
+                        sheep_sprites.empty()
+                        unsheep_sprites.empty()
+                        button_sprites.empty()
+                        bomb_num = 0
+                        Sheep("1.bmp", WIDTH, 1)
+                        return
+                    elif x >= 380 and x <= 420:
+                        clock.tick(10)
+                        info()
+                        screen.fill((30, 30, 50))
+                        pygame.draw.rect(screen, (38, 158, 63), (300, 80, 200, 80))
+                        button_sprites.draw(screen)
+                        text_coord = 50
+                        for line in intro_text:
+                            string_rendered = font.render(line, 1, pygame.Color('white'))
+                            intro_rect = string_rendered.get_rect()
+                            text_coord += 10
+                            intro_rect.top = text_coord
+                            intro_rect.x = 10
+                            text_coord += intro_rect.height
+                            screen.blit(string_rendered, intro_rect)
+                    elif x >= 440 and x <= 480:
+                        clock.tick(10)
+                        button_sprites.empty()
+                        hall_of_fame()
         pygame.display.flip()
         clock.tick(FPS)
 
@@ -164,12 +226,17 @@ def pr_line(line, x, y, color, sh=None, tag=30):
 
 def hall_of_fame():
     # выйти (из комнаты...), начать новую игру, помощь
-    global sheep_killed
+    global sheep_killed, bomb_pysked_last, bomb_pysked, sheep_killed_last
     con = sqlite3.connect('rating.sqlite3')
     cur = con.cursor()
     res = rating(cur.execute(f"""SELECT name, score FROM rating ORDER BY score""").fetchall())[1:5]
     intro_text = ["Введите свое имя:", f"Заработано баллов: {sheep_killed}", "Таблица лидеров"]
     screen.fill((30, 30, 30))
+    Button('new.png', 6, 320, 500)
+    Button('info.png', 0, 380, 500)
+    Button('close.png', 4, 440, 500)
+    pygame.draw.rect(screen, (38, 158, 63), (300, 480, 200, 80))
+    button_sprites.draw(screen)
     pr_line(intro_text[0], 10, 20, 'white')
     pr_line(intro_text[1], 10, 140, 'white')
     pr_line(intro_text[2], 400, 20, 'white')
@@ -192,10 +259,56 @@ def hall_of_fame():
     box = InputBox(10, 70, 140, 32)
     done = False
     while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminate()
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                x, y = event.pos
+                if y >= 500 and y <= 540:
+                    if x >= 320 and x <= 360:
+                        clock.tick(10)
+                        sheep_killed_last = 0
+                        bomb_pysked_last = 0
+                        sheep_sprites.empty()
+                        unsheep_sprites.empty()
+                        button_sprites.empty()
+                        main()
+                    elif x >= 380 and x <= 420:
+                        clock.tick(10)
+                        info()
+                        screen.fill((30, 30, 30))
+                        pygame.draw.rect(screen, (38, 158, 63), (300, 80, 480, 80))
+                        button_sprites.draw(screen)
+                        pygame.display.flip()
+                    elif x >= 440 and x <= 480:
+                        clock.tick(10)
+                        terminate()
+
         while not done:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     terminate()
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    x, y = event.pos
+                    if y >= 500 and y <= 540:
+                        if x >= 320 and x <= 360:
+                            clock.tick(10)
+                            sheep_killed_last = 0
+                            bomb_pysked_last = 0
+                            sheep_sprites.empty()
+                            unsheep_sprites.empty()
+                            button_sprites.empty()
+                            main()
+                        elif x >= 380 and x <= 420:
+                            clock.tick(10)
+                            info()
+                            screen.fill((30, 30, 30))
+                            pygame.draw.rect(screen, (38, 158, 63), (300, 80, 480, 80))
+                            button_sprites.draw(screen)
+                            pygame.display.flip()
+                        elif x >= 440 and x <= 480:
+                            clock.tick(10)
+                            terminate()
                 if box.stop is False:
                     box.handle_event(event)
                 else:
@@ -206,7 +319,8 @@ def hall_of_fame():
 
             screen.fill((30, 30, 30))
             box.draw(screen)
-
+            pygame.draw.rect(screen, (38, 158, 63), (300, 480, 200, 80))
+            button_sprites.draw(screen)
             pr_line(intro_text[0], 10, 20, 'white')
             pr_line(intro_text[1], 10, 140, 'white')
             pr_line(intro_text[2], 400, 20, 'white')
@@ -268,6 +382,11 @@ def pause():  # экран паузы...(с продолжением и помо
                   f"Всего выпущено бомб: {bomb_pysked}",
                   f"Убито кораблей: {sheep_killed}", f"Запасных бомб: {saved_bombs}"]
     screen.fill((30, 30, 30))
+    Button('play.png', 6, 320, 100)
+    Button('info.png', 0, 380, 100)
+    Button('stop.png', 4, 440, 100)
+    pygame.draw.rect(screen, (38, 158, 63), (300, 80, 200, 80))
+    button_sprites.draw(screen)
     text_coord = 50
     for line in intro_text:
         string_rendered = font.render(line, 1, pygame.Color('black'))
@@ -282,8 +401,33 @@ def pause():  # экран паузы...(с продолжением и помо
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 terminate()
-            elif event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
-                return
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                x, y = event.pos
+                if y >= 100 and y <= 140:
+                    if x >= 320 and x <= 360:
+                        clock.tick(10)
+                        button_sprites.empty()
+                        return
+                    elif x >= 380 and x <= 420:
+                        clock.tick(10)
+                        info()
+                        screen.fill((30, 30, 30))
+                        pygame.draw.rect(screen, (38, 158, 63), (300, 80, 200, 80))
+                        button_sprites.draw(screen)
+                        text_coord = 50
+                        for line in intro_text:
+                            string_rendered = font.render(line, 1, pygame.Color('black'))
+                            intro_rect = string_rendered.get_rect()
+                            text_coord += 10
+                            intro_rect.top = text_coord
+                            intro_rect.x = 10
+                            text_coord += intro_rect.height
+                            screen.blit(string_rendered, intro_rect)
+                        pygame.display.flip()
+                    elif x >= 440 and x <= 480:
+                        clock.tick(10)
+                        button_sprites.empty()
+                        hall_of_fame()
         pygame.display.flip()
         clock.tick(FPS)
 
@@ -344,7 +488,8 @@ end_but = pygame.sprite.Group()  # stop
 close_but = pygame.sprite.Group()  # close
 new_but = pygame.sprite.Group()  # new
 play_but = pygame.sprite.Group()  # play
-but = [help_but, pause_but, continue_but, end_but, close_but, new_but, play_but]
+back_but = pygame.sprite.Group()
+but = [help_but, pause_but, continue_but, end_but, close_but, new_but, play_but, back_but]
 
 
 class Button(pygame.sprite.Sprite):
@@ -473,63 +618,84 @@ class Bomb(pygame.sprite.Sprite):
         self.rect.x = int(self.x)
         self.rect.y = int(self.y)
         if self.rect.y <= 230 or self.rect.x <= -10 or self.rect.x >= WIDTH:
+            self.kill()
             drawing = False
 
-    def coord(self):
-        return self.rect.x, self.rect.y
 
 
-# hall_of_fame()
-bg = pygame.transform.scale(load_image('decoration.jpg'), (WIDTH, HEIGHT))
-# camera = load_image('camera.png')
-Sheep("1.bmp", WIDTH, 1)
-sheep_sprites.draw(screen)
-start_screen()
-running = True
-drawing = False
-bomb_num = 0  # 5
-# пауза
-while running:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-        if event.type == pygame.MOUSEMOTION:
-            x, y = event.pos
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            x, y = event.pos
-            if drawing is False:
-                bomb_num += 1
-                bomb_sprites.empty()
-                Bomb()
-                drawing = True
-
-    sheep_sprites.update()
-    unsheep_sprites.update()
-    screen.blit(bg, (0, 0))
+def main():
+    global sheep_killed, sheep_killed_last, bomb_pysked, bomb_pysked_last, bomb_num, \
+        saved_bombs, level, level_step, level_disappear, parts, N, V, x, y, drawing
+    # hall_of_fame() +
+    # middle_screen() +
+    # pause() +
+    # info() + (need text)
+    bg = pygame.transform.scale(load_image('decoration.jpg'), (WIDTH, HEIGHT))
+    # camera = load_image('camera.png')
+    Sheep("1.bmp", WIDTH, 1)
     sheep_sprites.draw(screen)
-    if drawing:
-        for el in bomb_sprites:
-            el.update()
-        bomb_sprites.draw(screen)
-    if bomb_pysked_last == 5 + saved_bombs and drawing is False:
-        saved_bombs = level * 5 - bomb_pysked
-        if saved_bombs > 5:
-            saved_bombs = 5
-        if change_level():
+    start_screen()
+    running = True
+    drawing = False
+    bomb_num = 0  # 5
+    sheep_killed = 0
+    bomb_pysked = 0
+    sheep_killed_last = 0
+    bomb_pysked_last = 0
+    saved_bombs = 0
+
+    level = 1
+    level_step = 4
+    level_disappear = 0
+    parts = (WIDTH + 200) // (2 * level_disappear + 1)
+    N = 2 * level_disappear + 1
+    V = 1
+
+    # пауза
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            if event.type == pygame.MOUSEMOTION:
+                x, y = event.pos
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                x, y = event.pos
+                if drawing is False:
+                    bomb_num += 1
+                    bomb_sprites.empty()
+                    Bomb()
+                    drawing = True
+
+        sheep_sprites.update()
+        unsheep_sprites.update()
+        screen.blit(bg, (0, 0))
+        sheep_sprites.draw(screen)
+        if drawing:
+            for el in bomb_sprites:
+                el.update()
+            bomb_sprites.draw(screen)
+        if bomb_pysked_last == 5 + saved_bombs and drawing is False:
+            saved_bombs = level * 5 - bomb_pysked
+            if saved_bombs > 5:
+                saved_bombs = 5
+            if change_level():
+                middle_screen()
+            else:
+                hall_of_fame()
+        elif sheep_killed_last == 4:
+            if saved_bombs < 5:
+                saved_bombs += 1
+            change_level()
             middle_screen()
-        else:
-            hall_of_fame()
-    elif sheep_killed_last == 4:
-        if saved_bombs < 5:
-            saved_bombs += 1
-        change_level()
-        middle_screen()
-    # if x > 500:
-    #     screen.blit(camera, (0, -100))
-    # elif x < 300:
-    #     screen.blit(camera, (-200, -100))
-    # else:
-    #     screen.blit(camera, (-500 + int(x), -100))
-    pygame.display.flip()
-    clock.tick(FPS)
-terminate()
+        # if x > 500:
+        #     screen.blit(camera, (0, -100))
+        # elif x < 300:
+        #     screen.blit(camera, (-200, -100))
+        # else:
+        #     screen.blit(camera, (-500 + int(x), -100))
+        pygame.display.flip()
+        clock.tick(FPS)
+    terminate()
+
+
+main()
