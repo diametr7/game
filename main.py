@@ -2,7 +2,7 @@ import sys
 import pygame
 import sqlite3
 
-# кнопки, музыкааааааа
+# музыкааааааа
 pygame.init()
 pygame.key.set_repeat(200, 70)
 
@@ -225,12 +225,12 @@ def pr_line(line, x, y, color, sh=None, tag=30):
 
 
 def hall_of_fame():
-    # выйти (из комнаты...), начать новую игру, помощь
+    # обновлять рекорды после добавления
     global sheep_killed, bomb_pysked_last, bomb_pysked, sheep_killed_last
     con = sqlite3.connect('rating.sqlite3')
     cur = con.cursor()
-    res = rating(cur.execute(f"""SELECT name, score FROM rating ORDER BY score""").fetchall())[1:5]
-    intro_text = ["Введите свое имя:", f"Заработано баллов: {sheep_killed}", "Таблица лидеров"]
+    res = rating(cur.execute(f"""SELECT name, score FROM rating ORDER BY score""").fetchall())[:5]
+    intro_text = ["Введите свое имя и нажмите Enter:", f"Заработано баллов: {sheep_killed}", "Таблица лидеров"]
     screen.fill((30, 30, 30))
     Button('new.png', 6, 320, 500)
     Button('info.png', 0, 380, 500)
@@ -277,9 +277,29 @@ def hall_of_fame():
                         clock.tick(10)
                         info()
                         screen.fill((30, 30, 30))
-                        pygame.draw.rect(screen, (38, 158, 63), (300, 80, 480, 80))
+                        box.draw(screen)
+                        pygame.draw.rect(screen, (38, 158, 63), (300, 480, 200, 80))
                         button_sprites.draw(screen)
+                        pr_line(intro_text[0], 10, 20, 'white')
+                        pr_line(intro_text[1], 10, 140, 'white')
+                        pr_line(intro_text[2], 400, 20, 'white')
+                        pr_line(f'Вы на {j} месте', 10, 200, 'white')
+                        X, Y = 400, 70
+                        i = 1
+                        for el in res:
+                            if i == 1:
+                                s = 'gold'
+                            elif i == 2:
+                                s = 'grey'
+                            elif i == 3:
+                                s = 'orange'
+                            else:
+                                s = 'white'
+                            pr_line('   '.join(el), X, Y, s)
+                            Y += 20
+                            i += 1
                         pygame.display.flip()
+                        clock.tick(30)
                     elif x >= 440 and x <= 480:
                         clock.tick(10)
                         terminate()
@@ -347,31 +367,11 @@ def hall_of_fame():
             con.close()
             j = 0
             for el in res1:
-                if el[1:] == [name, str(sheep_killed)]:
+                if [str(el[1]), el[2]] == [name, str(sheep_killed)]:
                     j = el[0]
                     break
             app = False
-            # screen.fill((30, 30, 30))
-            # box.draw(screen)
             pr_line(f'Вы на {j} месте', 10, 200, 'white')
-            # #print(j)
-            # pr_line(intro_text[0], 10, 20, 'white')
-            # pr_line(intro_text[1], 10, 140, 'white')
-            # pr_line(intro_text[2], 400, 20, 'white')
-            # X, Y = 400, 70
-            # i = 1
-            # for el in res:
-            #     if i == 1:
-            #         s = 'gold'
-            #     elif i == 2:
-            #         s = 'grey'
-            #     elif i == 3:
-            #         s = 'orange'
-            #     else:
-            #         s = 'white'
-            #     pr_line('   '.join(el), X, Y, s)
-            #     Y += 20
-            #     i += 1
             pygame.display.flip()
 
 
@@ -389,7 +389,7 @@ def pause():  # экран паузы...(с продолжением и помо
     button_sprites.draw(screen)
     text_coord = 50
     for line in intro_text:
-        string_rendered = font.render(line, 1, pygame.Color('black'))
+        string_rendered = font.render(line, 1, pygame.Color('white'))
         intro_rect = string_rendered.get_rect()
         text_coord += 10
         intro_rect.top = text_coord
@@ -416,7 +416,7 @@ def pause():  # экран паузы...(с продолжением и помо
                         button_sprites.draw(screen)
                         text_coord = 50
                         for line in intro_text:
-                            string_rendered = font.render(line, 1, pygame.Color('black'))
+                            string_rendered = font.render(line, 1, pygame.Color('white'))
                             intro_rect = string_rendered.get_rect()
                             text_coord += 10
                             intro_rect.top = text_coord
@@ -536,12 +536,7 @@ class Sheep(pygame.sprite.Sprite):
         self.mask = pygame.mask.from_surface(self.image)
 
     def revers(self):
-        self.image = pygame.transform.flip(self.image, False, True)
         self.go = (self.go + 1) % 2
-        if self.go == 1:
-            self.rect.y = 130
-        else:
-            self.rect.y = 180
 
     def update(self, *args):
         if self.rect.x <= -200:
@@ -564,13 +559,14 @@ class Sheep(pygame.sprite.Sprite):
         else:
             Sheep('1.bmp', WIDTH, 1)
         for i in range(9):
-            fire = Fire(self.rect.x + 40, self.rect.y, i)
+            Fire(self.rect.x + 40, self.rect.y, i)
             fire_sprites.draw(screen)
             pygame.display.flip()
             clock.tick(10)
             fire_sprites.empty()
         self.kill()
-
+    def go(self):
+        return self.go
 
 class Fire(pygame.sprite.Sprite):
     def __init__(self, x, y, i):
@@ -603,7 +599,7 @@ class Bomb(pygame.sprite.Sprite):
     def update(self, *args):
         global drawing
         for el in sheep_sprites:
-            if pygame.sprite.collide_mask(self, el):
+            if pygame.sprite.collide_mask(self, el) and el.go == 1:
                 drawing = False
                 el.fired()
         self.radius -= 0.02
@@ -622,17 +618,16 @@ class Bomb(pygame.sprite.Sprite):
             drawing = False
 
 
-
 def main():
     global sheep_killed, sheep_killed_last, bomb_pysked, bomb_pysked_last, bomb_num, \
         saved_bombs, level, level_step, level_disappear, parts, N, V, x, y, drawing
-    # hall_of_fame() +
+    # hall_of_fame()
     # middle_screen() +
     # pause() +
     # info() + (need text)
     bg = pygame.transform.scale(load_image('decoration.jpg'), (WIDTH, HEIGHT))
-    # camera = load_image('camera.png')
-    Sheep("1.bmp", WIDTH, 1)
+    # camera = pygame.transform.scale(load_image('1.png'), [1000, 800])
+    Sheep("2.png", WIDTH, 1)
     sheep_sprites.draw(screen)
     start_screen()
     running = True
@@ -646,12 +641,13 @@ def main():
 
     level = 1
     level_step = 4
-    level_disappear = 0
+    level_disappear = 2
     parts = (WIDTH + 200) // (2 * level_disappear + 1)
     N = 2 * level_disappear + 1
     V = 1
-
+    but = Button('pause.png', 1, 750, 10)
     # пауза
+    x = 400
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -660,7 +656,12 @@ def main():
                 x, y = event.pos
             if event.type == pygame.MOUSEBUTTONDOWN:
                 x, y = event.pos
-                if drawing is False:
+                if x >= 750 and x <= 790 and y >= 10 and y <= 50:
+
+                    but.kill()
+                    pause()
+                    but = Button('pause.png', 1, 750, 10)
+                elif drawing is False:
                     bomb_num += 1
                     bomb_sprites.empty()
                     Bomb()
@@ -675,6 +676,7 @@ def main():
                 el.update()
             bomb_sprites.draw(screen)
         if bomb_pysked_last == 5 + saved_bombs and drawing is False:
+            but.kill()
             saved_bombs = level * 5 - bomb_pysked
             if saved_bombs > 5:
                 saved_bombs = 5
@@ -683,6 +685,7 @@ def main():
             else:
                 hall_of_fame()
         elif sheep_killed_last == 4:
+            but.kill()
             if saved_bombs < 5:
                 saved_bombs += 1
             change_level()
@@ -693,6 +696,10 @@ def main():
         #     screen.blit(camera, (-200, -100))
         # else:
         #     screen.blit(camera, (-500 + int(x), -100))
+        pr_line(f"Осталось {5 + saved_bombs - bomb_num} бомб", 10, 30, 'white')
+        pr_line(f"{level} уровень", 10, 10, 'white')
+        pr_line(f"Убито {sheep_killed_last} кораблей", 10, 50, 'white')
+        pause_but.draw(screen)
         pygame.display.flip()
         clock.tick(FPS)
     terminate()
